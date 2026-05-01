@@ -1,0 +1,231 @@
+package com.enthusiasmpvp.donornpcs;
+
+import me.clip.placeholderapi.PlaceholderAPI;
+import net.citizensnpcs.api.CitizensAPI;
+import net.citizensnpcs.api.npc.NPC;
+import net.citizensnpcs.trait.SkinTrait;
+import org.bukkit.Location;
+import org.bukkit.entity.Entity;
+import org.bukkit.event.player.PlayerTeleportEvent;
+
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.logging.Level;
+
+public final class DonorNpcUpdater {
+    private static final float EAST_YAW = -90.0F;
+
+    private final EnthusiaDonorNPCsPlugin plugin;
+    private final MojangSkinService mojangSkinService = new MojangSkinService();
+    private final Map<String, UpdateStatus> statuses = new LinkedHashMap<>();
+    private DonorNpcsConfig config;
+
+    public DonorNpcUpdater(EnthusiaDonorNPCsPlugin plugin, DonorNpcsConfig config) {
+        this.plugin = plugin;
+        setConfig(config);
+    }
+
+    public void setConfig(DonorNpcsConfig config) {
+        this.config = config;
+        for (LeaderboardEntry entry : config.entries()) {
+            statuses.computeIfAbsent(entry.statusKey(), ignored -> new UpdateStatus(entry)).setEntry(entry);
+        }
+        statuses.keySet().removeIf(key -> config.entries().stream().noneMatch(entry -> entry.statusKey().equals(key)));
+    }
+
+    public Collection<UpdateStatus> statuses() {
+        return statuses.values();
+    }
+
+    public void updateAll(boolean force) {
+        if (!plugin.getServer().isPrimaryThread()) {
+            plugin.getServer().getScheduler().runTask(plugin, () -> updateAll(force));
+            return;
+        }
+
+        for (LeaderboardEntry entry : config.entries()) {
+            updateOne(entry, force);
+        }
+    }
+
+    private void updateOne(LeaderboardEntry entry, boolean force) {
+        UpdateStatus status = statuses.computeIfAbsent(entry.statusKey(), ignored -> new UpdateStatus(entry));
+        String placeholderValue = "";
+        String desiredSkinName = config.defaultSkinName();
+        UUID desiredUuid = null;
+
+        try {
+            if (!entry.uuidPlaceholder().isBlank()) {
+                placeholderValue = PlaceholderAPI.setPlaceholders((org.bukkit.OfflinePlayer) null, entry.uuidPlaceholder());
+                String uuidValue = PlaceholderNameUtil.cleanUuidValue(entry.uuidPlaceholder(), placeholderValue);
+                Optional<UUID> parsedUuid = UuidUtil.parseUuid(uuidValue);
+                if (parsedUuid.isPresent()) {
+                    desiredUuid = parsedUuid.get();
+                    desiredSkinName = desiredUuid.toString();
+                } else if (!uuidValue.isBlank()) {
+                    plugin.getLogger().warning(entry.label() + ": UUID placeholder returned an invalid UUID: '" + uuidValue + "'. Falling back to name/default skin.");
+                }
+            }
+
+            if (desiredUuid == null && !entry.namePlaceholder().isBlank()) {
+                placeholderValue = PlaceholderAPI.setPlaceholders((org.bukkit.OfflinePlayer) null, entry.namePlaceholder());
+                desiredSkinName = PlaceholderNameUtil.cleanOrDefault(
+                        entry.namePlaceholder(),
+                        placeholderValue,
+                        config.defaultSkinName()
+                );
+            }
+
+            String desiredSkinKey = desiredUuid == null ? desiredSkinName : "uuid:" + desiredUuid;
+            NPC npc = CitizensAPI.getNPCRegistry().getById(entry.npcId());
+            if (npc == null) {
+                String message = "Citizens NPC ID " + entry.npcId() + " does not exist";
+                status.markFailure(placeholderValue, desiredSkinKey, message);
+                plugin.getLogger().warning(entry.label() + ": " + message + ".");
+                return;
+            }
+
+            faceEast(npc);
+
+            if (!force
+                    && config.onlyUpdateWhenNameChanges()
+                    && desiredSkinKey.equalsIgnoreCase(status.lastAppliedSkinName())) {
+                status.markSkipped(placeholderValue, desiredSkinKey, "No change");
+                if (config.logNoChange()) {
+                    plugin.getLogger().info(entry.label() + " unchanged at skin '" + desiredSkinKey + "'.");
+                }
+                return;
+            }
+
+            if (desiredUuid != null) {
+                applyUuidSkinAsync(entry, npc, status, placeholderValue, desiredUuid, desiredSkinKey, force);
+            } else {
+                applyNameSkin(entry, npc, desiredSkinName);
+                status.markSuccess(placeholderValue, desiredSkinKey, "Updated by name/default skin");
+                if (config.logUpdates()) {
+                    plugin.getLogger().info(entry.label() + " skin updated to '" + desiredSkinName + "'.");
+                }
+            }
+        } catch (Exception ex) {
+            String message = "Failed to update " + entry.label() + " to skin '" + desiredSkinName + "'";
+            status.markFailure(placeholderValue, desiredSkinName, message + ": " + ex.getMessage());
+            plugin.getLogger().log(Level.WARNING, message + ".", ex);
+        }
+    }
+
+    private void applyUuidSkinAsync(
+            LeaderboardEntry entry,
+            NPC npc,
+            UpdateStatus status,
+            String placeholderValue,
+            UUID uuid,
+            String desiredSkinKey,
+            boolean force
+    ) {
+        status.markSkipped(placeholderValue, desiredSkinKey, "Fetching UUID skin texture");
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            try {
+                SkinTexture texture = mojangSkinService.fetchTexture(uuid, force);
+                plugin.getServer().getScheduler().runTask(plugin, () -> {
+                    try {
+                        applyUuidSkin(entry, npc, uuid, texture);
+                        status.markSuccess(placeholderValue, desiredSkinKey, "Updated by UUID");
+                        if (config.logUpdates()) {
+                            plugin.getLogger().info(entry.label() + " skin updated from UUID '" + uuid + "'.");
+                        }
+                    } catch (Exception ex) {
+                        String message = "Failed to apply UUID skin for " + entry.label() + " using UUID '" + uuid + "'";
+                        status.markFailure(placeholderValue, desiredSkinKey, message + ": " + ex.getMessage());
+                        plugin.getLogger().log(Level.WARNING, message + ".", ex);
+                    }
+                });
+            } catch (Exception ex) {
+                plugin.getServer().getScheduler().runTask(plugin, () -> {
+                    String message = "Failed to fetch UUID skin for " + entry.label() + " using UUID '" + uuid + "'";
+                    status.markFailure(placeholderValue, desiredSkinKey, message + ": " + ex.getMessage());
+                    plugin.getLogger().log(Level.WARNING, message + ".", ex);
+                });
+            }
+        });
+    }
+
+    private void applyUuidSkin(LeaderboardEntry entry, NPC npc, UUID uuid, SkinTexture texture) {
+        SkinTrait skinTrait = npc.getOrAddTrait(SkinTrait.class);
+
+        // UUID placeholders avoid name-history ambiguity. We fetch the signed Mojang texture
+        // off the main thread, then persist the exact texture onto the Citizens SkinTrait.
+        skinTrait.setFetchDefaultSkin(false);
+        skinTrait.setShouldUpdateSkins(true);
+        skinTrait.setSkinPersistent(uuid.toString(), texture.signature(), texture.value());
+
+        if (config.refreshNpcAfterSkinChange()) {
+            refreshNpc(entry, npc);
+        }
+    }
+
+    private void applyNameSkin(LeaderboardEntry entry, NPC npc, String skinName) {
+        SkinTrait skinTrait = npc.getOrAddTrait(SkinTrait.class);
+
+        // Citizens owns the profile lookup/cache. Passing forceUpdate=true asks it to fetch
+        // the named player's skin data when it has not already been loaded.
+        skinTrait.setFetchDefaultSkin(false);
+        skinTrait.setShouldUpdateSkins(true);
+        skinTrait.setSkinName(skinName, true);
+
+        if (config.refreshNpcAfterSkinChange()) {
+            refreshNpc(entry, npc);
+        }
+    }
+
+    private void refreshNpc(LeaderboardEntry entry, NPC npc) {
+        boolean wasSpawned = npc.isSpawned();
+        Location respawnLocation = currentOrStoredLocation(npc);
+
+        if (!wasSpawned || respawnLocation == null) {
+            return;
+        }
+
+        // The skin trait also respawns when needed, but this explicit refresh helps clients
+        // near the NPC see changed player skins without waiting for a full server restart.
+        setEastRotation(respawnLocation);
+        npc.despawn();
+        boolean spawned = npc.spawn(respawnLocation);
+        if (!spawned) {
+            plugin.getLogger().warning(entry.label() + ": skin was set, but the NPC did not respawn.");
+        }
+    }
+
+    private void faceEast(NPC npc) {
+        if (!npc.isSpawned()) {
+            return;
+        }
+
+        Location location = currentOrStoredLocation(npc);
+        if (location == null) {
+            return;
+        }
+
+        setEastRotation(location);
+        npc.teleport(location, PlayerTeleportEvent.TeleportCause.PLUGIN);
+
+        // Also send a facing update. East is positive X in Bukkit/Minecraft coordinates.
+        Location eastTarget = location.clone().add(10.0, 0.0, 0.0);
+        npc.faceLocation(eastTarget);
+    }
+
+    private void setEastRotation(Location location) {
+        location.setYaw(EAST_YAW);
+        location.setPitch(0.0F);
+    }
+
+    private Location currentOrStoredLocation(NPC npc) {
+        Entity entity = npc.getEntity();
+        if (entity != null) {
+            return entity.getLocation();
+        }
+        return npc.getStoredLocation();
+    }
+}

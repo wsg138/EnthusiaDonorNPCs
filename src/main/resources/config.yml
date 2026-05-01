@@ -1,0 +1,48 @@
+update-interval-minutes: 10
+default-skin-name: "Steve"
+
+settings:
+  only-update-when-name-changes: true
+  refresh-npc-after-skin-change: true
+  log-updates: true
+  log-no-change: false
+
+leaderboards:
+  alltime-donors:
+    display-name: "All-Time Donors"
+    positions:
+      1:
+        npc-id: 293
+        name-placeholder: "%enthusiadonors_alltime_top_1_name%"
+        uuid-placeholder: "%enthusiadonors_alltime_top_1_uuid%"
+      2:
+        npc-id: 294
+        name-placeholder: "%enthusiadonors_alltime_top_2_name%"
+      3:
+        npc-id: 295
+        name-placeholder: "%enthusiadonors_alltime_top_3_name%"
+
+  monthly-donors:
+    display-name: "Monthly Donors"
+    positions:
+      1:
+        npc-id: 296
+        name-placeholder: "%enthusiadonors_monthly_top_1_name%"
+      2:
+        npc-id: 298
+        name-placeholder: "%enthusiadonors_monthly_top_2_name%"
+        uuid-placeholder: "%enthusiadonors_monthly_top_2_uuid%"
+      3:
+        npc-id: 297
+        name-placeholder: "%enthusiadonors_monthly_top_3_name%"
+
+# Add these once you know the NPC IDs for the #10 spots:
+#      10:
+#        npc-id: 299
+#        uuid-placeholder: "%enthusiadonors_monthly_top_10_uuid%"
+#
+#  alltime-donors:
+#    positions:
+#      10:
+#        npc-id: 300
+#        uuid-placeholder: "%enthusiadonors_alltime_top_10_uuid%"

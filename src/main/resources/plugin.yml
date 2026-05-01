@@ -1,0 +1,18 @@
+name: EnthusiaDonorNPCs
+main: com.enthusiasmpvp.donornpcs.EnthusiaDonorNPCsPlugin
+version: 1.0.2
+api-version: '1.21'
+depend:
+  - Citizens
+  - PlaceholderAPI
+commands:
+  EnthusiaDonorNPCs:
+    description: Main command for EnthusiaDonorNPCs
+    usage: /EnthusiaDonorNPCs <reload|update|status>
+    aliases:
+      - donornpcs
+      - ednpcs
+permissions:
+  enthusiadonornpcs.admin:
+    description: Allows use of EnthusiaDonorNPCs admin commands
+    default: op
