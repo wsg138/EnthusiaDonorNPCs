@@ -79,6 +79,7 @@ public final class DonorNpcsConfig {
                     if (npcId.isBlank()) {
                         npcId = position.getString("npc-name", "").trim();
                     }
+                    String hologramName = position.getString("hologram-name", "").trim();
                     String namePlaceholder = position.getString("name-placeholder", "");
                     String uuidPlaceholder = position.getString("uuid-placeholder", "");
                     FacingDirection facingDirection = FacingDirection.fromConfig(position.getString("facing", "east"));
@@ -91,6 +92,7 @@ public final class DonorNpcsConfig {
                             displayName,
                             parsedPosition,
                             npcId,
+                            hologramName,
                             namePlaceholder.trim(),
                             uuidPlaceholder.trim(),
                             facingDirection

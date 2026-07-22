@@ -16,11 +16,13 @@ import java.util.logging.Level;
 /** Updates skins through FancyNpcs' supported API. */
 public final class FancyNpcUpdater implements NpcUpdater {
     private final EnthusiaDonorNPCsPlugin plugin;
+    private final FancyHologramLinker hologramLinker;
     private final Map<String, UpdateStatus> statuses = new LinkedHashMap<>();
     private DonorNpcsConfig config;
 
     public FancyNpcUpdater(EnthusiaDonorNPCsPlugin plugin, DonorNpcsConfig config) {
         this.plugin = plugin;
+        this.hologramLinker = new FancyHologramLinker(plugin);
         setConfig(config);
     }
 
@@ -71,6 +73,8 @@ public final class FancyNpcUpdater implements NpcUpdater {
                 plugin.getLogger().warning(entry.label() + ": " + message + ".");
                 return;
             }
+
+            hologramLinker.link(entry);
 
             boolean identityChanged = !desiredSkinKey.equalsIgnoreCase(status.lastAppliedIdentity());
             if (!mode.isForce() && config.onlyUpdateWhenNameChanges() && !identityChanged

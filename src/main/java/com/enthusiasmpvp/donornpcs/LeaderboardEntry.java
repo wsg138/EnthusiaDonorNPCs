@@ -5,6 +5,7 @@ public record LeaderboardEntry(
         String leaderboardDisplayName,
         int position,
         String npcId,
+        String hologramName,
         String namePlaceholder,
         String uuidPlaceholder,
         FacingDirection facingDirection

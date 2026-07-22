@@ -18,13 +18,16 @@ leaderboards:
     positions:
       1:
         npc-name: "donorboard_1"
+        hologram-name: "donorboard_1_text"
         name-placeholder: "%enthusiadonors_alltime_top_1_name%"
         uuid-placeholder: "%enthusiadonors_alltime_top_1_uuid%"
       2:
         npc-name: "donorboard_2"
+        hologram-name: "donorboard_2_text"
         name-placeholder: "%enthusiadonors_alltime_top_2_name%"
       3:
         npc-name: "donorboard_3"
+        hologram-name: "donorboard_3_text"
         name-placeholder: "%enthusiadonors_alltime_top_3_name%"
 
   monthly-donors:
@@ -32,13 +35,16 @@ leaderboards:
     positions:
       1:
         npc-name: "donorboard_monthly_1"
+        hologram-name: "donorboard_monthly_1_text"
         name-placeholder: "%enthusiadonors_monthly_top_1_name%"
       2:
         npc-name: "donorboard_monthly_2"
+        hologram-name: "donorboard_monthly_2_text"
         name-placeholder: "%enthusiadonors_monthly_top_2_name%"
         uuid-placeholder: "%enthusiadonors_monthly_top_2_uuid%"
       3:
         npc-name: "donorboard_monthly_3"
+        hologram-name: "donorboard_monthly_3_text"
         name-placeholder: "%enthusiadonors_monthly_top_3_name%"
 
   top-balance:
@@ -46,6 +52,7 @@ leaderboards:
     positions:
       1:
         npc-name: "donorboard_balance_1"
+        hologram-name: "donorboard_balance_1_text"
         uuid-placeholder: "%currency_top_items_10_uuid%"
         facing: north
 
@@ -54,6 +61,7 @@ leaderboards:
     positions:
       1:
         npc-name: "donorboard_playtime_1"
+        hologram-name: "donorboard_playtime_1_text"
         uuid-placeholder: "%playtime_top_active_all_1_uuid%"
         facing: north
 
@@ -62,5 +70,6 @@ leaderboards:
     positions:
       1:
         npc-name: "donorboard_kills_1"
+        hologram-name: "donorboard_kills_1_text"
         uuid-placeholder: "%enthusiadonors_kills_top_1_uuid%"
         facing: north
