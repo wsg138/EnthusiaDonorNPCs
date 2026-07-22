@@ -3,8 +3,10 @@ main: com.enthusiasmpvp.donornpcs.EnthusiaDonorNPCsPlugin
 version: 1.0.4
 api-version: '1.21'
 depend:
-  - Citizens
   - PlaceholderAPI
+softdepend:
+  - Citizens
+  - FancyNpcs
 commands:
   EnthusiaDonorNPCs:
     description: Main command for EnthusiaDonorNPCs

@@ -39,8 +39,8 @@ public final class DonorNpcsCommand implements CommandExecutor, TabCompleter {
         switch (args[0].toLowerCase(Locale.ROOT)) {
             case "reload" -> {
                 plugin.reloadPluginConfig();
-                plugin.forceUpdate();
-                sender.sendMessage(ChatColor.GREEN + "EnthusiaDonorNPCs config reloaded and skins force-updated.");
+                plugin.reconcileNow();
+                sender.sendMessage(ChatColor.GREEN + "EnthusiaDonorNPCs config reloaded and reconciliation queued.");
                 return true;
             }
             case "update" -> {
@@ -97,8 +97,8 @@ public final class DonorNpcsCommand implements CommandExecutor, TabCompleter {
                     + " | facing " + entry.facingDirection().name().toLowerCase(Locale.ROOT)
                     + " | name " + printable(entry.namePlaceholder())
                     + " | uuid " + printable(entry.uuidPlaceholder()));
-            sender.sendMessage(ChatColor.GRAY + "  desired=" + printable(status.lastDesiredSkinName())
-                    + ", applied=" + printable(status.lastAppliedSkinName())
+            sender.sendMessage(ChatColor.GRAY + "  resolved=" + printable(status.lastResolvedIdentity())
+                    + ", applied=" + printable(status.lastAppliedIdentity())
                     + ", raw=" + printable(status.lastPlaceholderValue())
                     + ", status=" + success
                     + ChatColor.GRAY + ", last=" + lastAttempt

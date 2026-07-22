@@ -5,12 +5,13 @@ import java.time.Instant;
 public final class UpdateStatus {
     private LeaderboardEntry entry;
     private String lastPlaceholderValue = "";
-    private String lastDesiredSkinName = "";
-    private String lastAppliedSkinName = "";
+    private String lastResolvedIdentity = "";
+    private String lastAppliedIdentity = "";
     private boolean lastSuccessful;
     private String lastMessage = "Not updated yet";
     private Instant lastAttemptAt;
     private Instant lastSuccessAt;
+    private long revision;
 
     public UpdateStatus(LeaderboardEntry entry) {
         this.entry = entry;
@@ -28,12 +29,20 @@ public final class UpdateStatus {
         return lastPlaceholderValue;
     }
 
-    public String lastDesiredSkinName() {
-        return lastDesiredSkinName;
+    public String lastResolvedIdentity() {
+        return lastResolvedIdentity;
     }
 
-    public String lastAppliedSkinName() {
-        return lastAppliedSkinName;
+    public String lastAppliedIdentity() {
+        return lastAppliedIdentity;
+    }
+
+    public long revision() {
+        return revision;
+    }
+
+    public long nextRevision() {
+        return ++revision;
     }
 
     public boolean lastSuccessful() {
@@ -52,27 +61,27 @@ public final class UpdateStatus {
         return lastSuccessAt;
     }
 
-    public void markSkipped(String placeholderValue, String desiredSkinName, String message) {
+    public void markSkipped(String placeholderValue, String desiredIdentity, String message) {
         this.lastPlaceholderValue = safe(placeholderValue);
-        this.lastDesiredSkinName = safe(desiredSkinName);
+        this.lastResolvedIdentity = safe(desiredIdentity);
         this.lastSuccessful = true;
         this.lastMessage = message;
         this.lastAttemptAt = Instant.now();
     }
 
-    public void markSuccess(String placeholderValue, String desiredSkinName, String message) {
+    public void markSuccess(String placeholderValue, String desiredIdentity, String message) {
         this.lastPlaceholderValue = safe(placeholderValue);
-        this.lastDesiredSkinName = safe(desiredSkinName);
-        this.lastAppliedSkinName = safe(desiredSkinName);
+        this.lastResolvedIdentity = safe(desiredIdentity);
+        this.lastAppliedIdentity = safe(desiredIdentity);
         this.lastSuccessful = true;
         this.lastMessage = message;
         this.lastAttemptAt = Instant.now();
         this.lastSuccessAt = this.lastAttemptAt;
     }
 
-    public void markFailure(String placeholderValue, String desiredSkinName, String message) {
+    public void markFailure(String placeholderValue, String desiredIdentity, String message) {
         this.lastPlaceholderValue = safe(placeholderValue);
-        this.lastDesiredSkinName = safe(desiredSkinName);
+        this.lastResolvedIdentity = safe(desiredIdentity);
         this.lastSuccessful = false;
         this.lastMessage = message;
         this.lastAttemptAt = Instant.now();

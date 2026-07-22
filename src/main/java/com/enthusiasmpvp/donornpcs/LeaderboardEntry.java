@@ -4,7 +4,7 @@ public record LeaderboardEntry(
         String leaderboardKey,
         String leaderboardDisplayName,
         int position,
-        int npcId,
+        String npcId,
         String namePlaceholder,
         String uuidPlaceholder,
         FacingDirection facingDirection

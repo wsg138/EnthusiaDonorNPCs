@@ -11,39 +11,47 @@ import java.util.Locale;
 
 public final class DonorNpcsConfig {
     private final int updateIntervalMinutes;
+    private final int identityCheckIntervalSeconds;
     private final String defaultSkinName;
     private final boolean onlyUpdateWhenNameChanges;
-    private final boolean refreshNpcAfterSkinChange;
     private final boolean logUpdates;
     private final boolean logNoChange;
+    private final int viewerResyncDelayTicks;
+    private final NpcProvider npcProvider;
     private final List<LeaderboardEntry> entries;
 
     private DonorNpcsConfig(
             int updateIntervalMinutes,
+            int identityCheckIntervalSeconds,
             String defaultSkinName,
             boolean onlyUpdateWhenNameChanges,
-            boolean refreshNpcAfterSkinChange,
             boolean logUpdates,
             boolean logNoChange,
+            int viewerResyncDelayTicks,
+            NpcProvider npcProvider,
             List<LeaderboardEntry> entries
     ) {
         this.updateIntervalMinutes = updateIntervalMinutes;
+        this.identityCheckIntervalSeconds = identityCheckIntervalSeconds;
         this.defaultSkinName = defaultSkinName;
         this.onlyUpdateWhenNameChanges = onlyUpdateWhenNameChanges;
-        this.refreshNpcAfterSkinChange = refreshNpcAfterSkinChange;
         this.logUpdates = logUpdates;
         this.logNoChange = logNoChange;
+        this.viewerResyncDelayTicks = viewerResyncDelayTicks;
+        this.npcProvider = npcProvider;
         this.entries = List.copyOf(entries);
     }
 
     public static DonorNpcsConfig from(FileConfiguration config) {
         int updateIntervalMinutes = Math.max(1, config.getInt("update-interval-minutes", 10));
+        int identityCheckIntervalSeconds = Math.max(1, config.getInt("identity-check-interval-seconds", 15));
         String defaultSkinName = nonBlank(config.getString("default-skin-name"), "Steve");
 
         boolean onlyUpdateWhenNameChanges = config.getBoolean("settings.only-update-when-name-changes", true);
-        boolean refreshNpcAfterSkinChange = config.getBoolean("settings.refresh-npc-after-skin-change", true);
         boolean logUpdates = config.getBoolean("settings.log-updates", true);
         boolean logNoChange = config.getBoolean("settings.log-no-change", false);
+        int viewerResyncDelayTicks = Math.max(1, config.getInt("settings.viewer-resync-delay-ticks", 20));
+        NpcProvider npcProvider = NpcProvider.fromConfig(config.getString("npc-provider", "citizens"));
 
         List<LeaderboardEntry> entries = new ArrayList<>();
         ConfigurationSection leaderboards = config.getConfigurationSection("leaderboards");
@@ -67,11 +75,11 @@ public final class DonorNpcsConfig {
                     }
 
                     int parsedPosition = parsePosition(positionKey);
-                    int npcId = position.getInt("npc-id", -1);
+                    String npcId = position.getString("npc-id", "").trim();
                     String namePlaceholder = position.getString("name-placeholder", "");
                     String uuidPlaceholder = position.getString("uuid-placeholder", "");
                     FacingDirection facingDirection = FacingDirection.fromConfig(position.getString("facing", "east"));
-                    if (parsedPosition < 1 || npcId < 0 || (namePlaceholder.isBlank() && uuidPlaceholder.isBlank())) {
+                    if (parsedPosition < 1 || npcId.isBlank() || (namePlaceholder.isBlank() && uuidPlaceholder.isBlank())) {
                         continue;
                     }
 
@@ -94,17 +102,23 @@ public final class DonorNpcsConfig {
 
         return new DonorNpcsConfig(
                 updateIntervalMinutes,
+                identityCheckIntervalSeconds,
                 defaultSkinName,
                 onlyUpdateWhenNameChanges,
-                refreshNpcAfterSkinChange,
                 logUpdates,
                 logNoChange,
+                viewerResyncDelayTicks,
+                npcProvider,
                 entries
         );
     }
 
     public int updateIntervalMinutes() {
         return updateIntervalMinutes;
+    }
+
+    public int identityCheckIntervalSeconds() {
+        return identityCheckIntervalSeconds;
     }
 
     public String defaultSkinName() {
@@ -115,16 +129,20 @@ public final class DonorNpcsConfig {
         return onlyUpdateWhenNameChanges;
     }
 
-    public boolean refreshNpcAfterSkinChange() {
-        return refreshNpcAfterSkinChange;
-    }
-
     public boolean logUpdates() {
         return logUpdates;
     }
 
     public boolean logNoChange() {
         return logNoChange;
+    }
+
+    public int viewerResyncDelayTicks() {
+        return viewerResyncDelayTicks;
+    }
+
+    public NpcProvider npcProvider() {
+        return npcProvider;
     }
 
     public List<LeaderboardEntry> entries() {

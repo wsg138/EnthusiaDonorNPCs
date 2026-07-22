@@ -1,9 +1,14 @@
 update-interval-minutes: 10
+identity-check-interval-seconds: 15
 default-skin-name: "Steve"
+# Select the NPC plugin used by the configured positions: citizens or fancynpcs.
+# Citizens looks up numeric npc-id values. FancyNpcs accepts either its numeric ID
+# or NPC name; quote names that contain only digits if they are names.
+npc-provider: "citizens"
 
 settings:
   only-update-when-name-changes: true
-  refresh-npc-after-skin-change: true
+  viewer-resync-delay-ticks: 20
   log-updates: true
   log-no-change: false
 
