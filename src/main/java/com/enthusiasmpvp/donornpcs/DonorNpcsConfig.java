@@ -76,6 +76,9 @@ public final class DonorNpcsConfig {
 
                     int parsedPosition = parsePosition(positionKey);
                     String npcId = position.getString("npc-id", "").trim();
+                    if (npcId.isBlank()) {
+                        npcId = position.getString("npc-name", "").trim();
+                    }
                     String namePlaceholder = position.getString("name-placeholder", "");
                     String uuidPlaceholder = position.getString("uuid-placeholder", "");
                     FacingDirection facingDirection = FacingDirection.fromConfig(position.getString("facing", "east"));

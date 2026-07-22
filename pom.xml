@@ -22,16 +22,12 @@
             <url>https://repo.papermc.io/repository/maven-public/</url>
         </repository>
         <repository>
-            <id>citizens-repo</id>
-            <url>https://maven.citizensnpcs.co/repo</url>
+            <id>fancyinnovations-releases</id>
+            <url>https://repo.fancyinnovations.com/releases</url>
         </repository>
         <repository>
             <id>placeholderapi</id>
             <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
-        </repository>
-        <repository>
-            <id>fancyinnovations-releases</id>
-            <url>https://repo.fancyinnovations.com/releases</url>
         </repository>
     </repositories>
 
@@ -40,6 +36,12 @@
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
             <version>26.2.build.39-alpha</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>me.clip</groupId>
+            <artifactId>placeholderapi</artifactId>
+            <version>2.11.6</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -53,12 +55,6 @@
                     <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>me.clip</groupId>
-            <artifactId>placeholderapi</artifactId>
-            <version>2.11.6</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>de.oliver</groupId>
