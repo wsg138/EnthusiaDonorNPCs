@@ -1,6 +1,8 @@
 # EnthusiaDonorNPCs
 
-Paper plugin that updates donor leaderboard NPC skins from PlaceholderAPI values.
+Paper plugin that updates donor/stat leaderboard NPC skins from PlaceholderAPI values.
+
+For the current **player-facing Enthusia SMP displays**—which leaderboards have NPCs, how many positions are shown, and how often skins update—see **[`PLAYER_GUIDE.md`](PLAYER_GUIDE.md)**. This README remains the setup/provider reference.
 
 ## Requirements
 
