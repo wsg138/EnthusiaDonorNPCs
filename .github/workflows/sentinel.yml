@@ -25,12 +25,39 @@ jobs:
           java-version: '25'
           cache: maven
 
+      - name: Configure declared Citizens build dependency repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > sentinel-settings.xml <<'EOF'
+          <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                    xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+            <profiles>
+              <profile>
+                <id>sentinel-build-repositories</id>
+                <repositories>
+                  <repository>
+                    <id>citizens-repo</id>
+                    <url>https://maven.citizensnpcs.co/repo</url>
+                    <releases><enabled>true</enabled></releases>
+                    <snapshots><enabled>true</enabled></snapshots>
+                  </repository>
+                </repositories>
+              </profile>
+            </profiles>
+            <activeProfiles>
+              <activeProfile>sentinel-build-repositories</activeProfile>
+            </activeProfiles>
+          </settings>
+          EOF
+
       - name: Build exact-head plugin
-        run: mvn --batch-mode --no-transfer-progress clean verify
+        run: mvn --settings sentinel-settings.xml --batch-mode --no-transfer-progress clean verify
 
       - name: Resolve pinned PlaceholderAPI dependency through Maven
         run: >-
-          mvn --batch-mode --no-transfer-progress
+          mvn --settings sentinel-settings.xml --batch-mode --no-transfer-progress
           org.apache.maven.plugins:maven-dependency-plugin:3.8.1:copy
           -Dartifact=me.clip:placeholderapi:2.11.6
           -DoutputDirectory=sentinel-deps
