@@ -1,0 +1,84 @@
+name: Sentinel artifact
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  artifact:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact pull-request head
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Set up Java 25
+        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Configure declared Citizens build dependency repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > sentinel-settings.xml <<'EOF'
+          <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                    xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+            <profiles>
+              <profile>
+                <id>sentinel-build-repositories</id>
+                <repositories>
+                  <repository>
+                    <id>citizens-repo</id>
+                    <url>https://maven.citizensnpcs.co/repo</url>
+                    <releases><enabled>true</enabled></releases>
+                    <snapshots><enabled>true</enabled></snapshots>
+                  </repository>
+                </repositories>
+              </profile>
+            </profiles>
+            <activeProfiles>
+              <activeProfile>sentinel-build-repositories</activeProfile>
+            </activeProfiles>
+          </settings>
+          EOF
+
+      - name: Build exact-head plugin
+        run: mvn --settings sentinel-settings.xml --batch-mode --no-transfer-progress clean verify
+
+      - name: Resolve pinned PlaceholderAPI dependency through Maven
+        run: >-
+          mvn --settings sentinel-settings.xml --batch-mode --no-transfer-progress
+          org.apache.maven.plugins:maven-dependency-plugin:3.8.1:copy
+          -Dartifact=me.clip:placeholderapi:2.11.6
+          -DoutputDirectory=sentinel-deps
+
+      - name: Stage stable Sentinel artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f target/EnthusiaDonorNPCs-1.0.4.jar
+          test -f sentinel-deps/placeholderapi-2.11.6.jar
+          mkdir -p sentinel-artifact/dependencies
+          cp target/EnthusiaDonorNPCs-1.0.4.jar sentinel-artifact/plugin.jar
+          cp sentinel-deps/placeholderapi-2.11.6.jar sentinel-artifact/dependencies/PlaceholderAPI.jar
+          jar tf sentinel-artifact/plugin.jar | grep -Fxq 'plugin.yml'
+          jar tf sentinel-artifact/plugin.jar | grep -Fxq 'com/enthusiasmpvp/donornpcs/EnthusiaDonorNPCsPlugin.class'
+          jar tf sentinel-artifact/dependencies/PlaceholderAPI.jar | grep -Fxq 'plugin.yml'
+
+      - name: Upload Sentinel artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: enthusiadonornpcs-sentinel-paper
+          path: sentinel-artifact/
+          if-no-files-found: error
+          retention-days: 14
